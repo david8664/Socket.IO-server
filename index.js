@@ -1,41 +1,37 @@
+require("dotenv").config();
 const express = require("express");
-const { createServer } = require("http");
-const { Server } = require("socket.io");
-const cors = require ('cors')
+const http = require("http");
+const socketIO = require("socket.io");
+const cors = require("cors");
 
 const app = express();
-const httpServer = createServer(app);
-const io = new Server (httpServer)
-app.use (cors())
+const httpServer = http.createServer(app);
+const port = process.env.PORT || 4000;
+const io = socketIO(httpServer);
 
+app.use(cors());
 
-io.on("connection", (socket)  => {
-  console.log ("User Connected")
-socket.emit('start',"User Connected")
-socket.on("username",(msg)=> {
-    const users = msg    
-    console.log (users)
-    socket.broadcast.emit(`${users} connected`)
-})
-socket.on('uploadMessage',(msg)=> {
-socket.broadcast.emit ('downloadMessage',msg)
-console.log (msg)
-})
-  })
+const usersDB = {};
 
-  io.on ('disconnect', ()=> {
-    console.log ("User Disconnected")
-  })
+io.on("connection", (socket) => {
+  socket.on("username", (username) => {
+    const userId = socket.id;
+    usersDB[userId] = username;
+    io.emit("userConnected", `${username} connected`);
+  });
 
+  socket.on("uploadMessage", (msg) => {
+    const userId = socket.id;
+    io.emit("downloadMessage", `${userId} ${msg}`);
+  });
 
+  socket.on("disconnect", () => {
+    const userId = socket.id;
+    io.emit("userDisconnected", `${usersDB[userId]} disconnected`);
+    delete usersDB[userId];
+  });
+});
 
-
-
-
-
-httpServer.listen(4000,()=> console.log ('Server is Up 🖥️'));
-
-// let users = {
-//   socket.id:name
-// }
-// users.sohrfoihwrfiohwofhw.name
+httpServer.listen(port, () => {
+  console.log(`💻 Server listening on port ${port} (http://localhost:${port})`);
+});
