@@ -22,7 +22,7 @@ io.on("connection", (socket) => {
 
   socket.on("uploadMessage", (msg) => {
     const userId = socket.id;
-    io.emit("downloadMessage", `${userId} ${msg}`);
+    io.emit("downloadMessage", `${usersDB[userId]}:  ${msg}`);
   });
 
   socket.on("disconnect", () => {
